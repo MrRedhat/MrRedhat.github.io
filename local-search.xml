@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  
+  
+  
+  <entry>
+    <title>Arduino中LOOP如何实现循环执行</title>
+    <link href="/2021/04/11/Arduino%E4%B8%ADLOOP%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%BE%AA%E7%8E%AF%E6%89%A7%E8%A1%8C/"/>
+    <url>/2021/04/11/Arduino%E4%B8%ADLOOP%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%BE%AA%E7%8E%AF%E6%89%A7%E8%A1%8C/</url>
+    
+    <content type="html"><![CDATA[<h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>Arduino中LOOP函数如何实现循环执行</p><a id="more"></a><h1 id="答案"><a href="#答案" class="headerlink" title="答案"></a>答案</h1><p>在Arduino IDE的源文件里，有一个main.cpp的文件存在Arduino的核心库里，源代码如下：</p><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;Arduino.h&gt;</span></span><br><br><span class="hljs-comment">// Declared weak in Arduino.h to allow user redefinitions.</span><br><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">atexit</span><span class="hljs-params">(<span class="hljs-keyword">void</span> (* <span class="hljs-comment">/*func*/</span> )())</span> </span>&#123; <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>; &#125;<br><br><span class="hljs-comment">// Weak empty variant initialization function.</span><br><span class="hljs-comment">// May be redefined by variant files.</span><br><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">initVariant</span><span class="hljs-params">()</span> __<span class="hljs-title">attribute__</span><span class="hljs-params">((weak))</span></span>;<br><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">initVariant</span><span class="hljs-params">()</span> </span>&#123; &#125;<br><br><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">setupUSB</span><span class="hljs-params">()</span> __<span class="hljs-title">attribute__</span><span class="hljs-params">((weak))</span></span>;<br><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">setupUSB</span><span class="hljs-params">()</span> </span>&#123; &#125;<br><br><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-keyword">void</span>)</span></span><br><span class="hljs-function"></span>&#123;<br>    init();<br>    initVariant();<br><span class="hljs-meta">#<span class="hljs-meta-keyword">if</span> defined(USBCON)</span><br>    USBDevice.attach();<br><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span><br>    setup();<br>    <span class="hljs-keyword">for</span> (;;) &#123;<br>        loop();<br>        <span class="hljs-keyword">if</span> (serialEventRun) serialEventRun();<br>    &#125;<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br><br></code></pre></td></tr></table></figure><p>其中loop函数是通过for的死循环实现的，并且每次loop结束之后都会有一个条件判断，所以可以实现loop的循环执行。</p><h1 id="吐槽一下"><a href="#吐槽一下" class="headerlink" title="吐槽一下"></a>吐槽一下</h1><p>死循环谁不会写啊（doge</p><h1 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h1><p>直接百度该问题，单独查找arduino都没有收获</p><p>在arduino社区搜索同样无果</p><p>百度loop函数</p><p>找到这个bbs里的文章</p><p><a href="https://bbs.elecfans.com/jishu_522284_1_1.html">https://bbs.elecfans.com/jishu_522284_1_1.html</a></p><p>得知可以直接查看源码，我就懒得把IDE下载到本地了</p><p>直接看博客吧</p><p>这些函数又好像不是很重要</p><h2 id="loop"><a href="#loop" class="headerlink" title="loop"></a>loop</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">loop</span><span class="hljs-params">()</span></span>&#123;<br>digitalWrite(<span class="hljs-number">13</span>, HIGH);<br>delay(<span class="hljs-number">1000</span>);<br>digitalWrite(<span class="hljs-number">13</span>, LOW);<br>delay(<span class="hljs-number">1000</span>);<br>&#125;<br></code></pre></td></tr></table></figure><p>loop函数里包含了digitalwrite函数和delay函数</p><p>先看digitalwrite函数</p><h2 id="digitalWrite"><a href="#digitalWrite" class="headerlink" title="digitalWrite"></a>digitalWrite</h2><p>函数原型如下</p><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">digitalWrite</span><span class="hljs-params">(<span class="hljs-keyword">uint8_t</span> pin, <span class="hljs-keyword">uint8_t</span> val)</span></span><br><span class="hljs-function"></span>&#123;<br>     <span class="hljs-keyword">uint8_t</span> timer = digitalPinToTimer(pin);<br>     <span class="hljs-keyword">uint8_t</span> bit = digitalPinToBitMask(pin);<br>     <span class="hljs-keyword">uint8_t</span> port = digitalPinToPort(pin);<br>     <span class="hljs-keyword">volatile</span> <span class="hljs-keyword">uint8_t</span> *out;<br><br>     <span class="hljs-keyword">if</span> (port == NOT_A_PIN) <span class="hljs-keyword">return</span>;<br><br>     <span class="hljs-comment">// If the pin that support PWM output, we need to turn it off</span><br>     <span class="hljs-comment">// before doing a digital write.</span><br>     <span class="hljs-keyword">if</span> (timer != NOT_ON_TIMER) turnOffPWM(timer);<br><br>     out = portOutputRegister(port);<br><br>     <span class="hljs-keyword">if</span> (val == LOW)<br>     &#123;<br>                <span class="hljs-keyword">uint8_t</span> oldSREG = SREG;<br>                cli();<br>                *out &amp;= ~bit;<br>                SREG = oldSREG;<br>     &#125;<br>     <span class="hljs-keyword">else</span><br>     &#123;<br>                <span class="hljs-keyword">uint8_t</span> oldSREG = SREG;<br>                cli();<br>                *out |= bit;<br>                SREG = oldSREG;<br>     &#125;<br>&#125;<br></code></pre></td></tr></table></figure><h3 id="digitalPinToTimer"><a href="#digitalPinToTimer" class="headerlink" title="digitalPinToTimer"></a>digitalPinToTimer</h3><p>百度后看到这一篇博文</p><p><a href="http://blog.sina.com.cn/s/blog_16523534a0102x6xz.html">http://blog.sina.com.cn/s/blog_16523534a0102x6xz.html</a></p><h3 id="digitalPinToPort"><a href="#digitalPinToPort" class="headerlink" title="digitalPinToPort"></a>digitalPinToPort</h3><h2 id="main"><a href="#main" class="headerlink" title="main"></a>main</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-keyword">void</span>)</span></span><br><span class="hljs-function"></span>&#123;<br>init();<br> <br>initVariant();<br> <br><span class="hljs-meta">#<span class="hljs-meta-keyword">if</span> defined(USBCON)</span><br>USBDevice.attach();<br><span class="hljs-meta">#<span class="hljs-meta-keyword">endif</span></span><br><br>setup();<br>    <br><span class="hljs-keyword">for</span> (;;) &#123;<br>loop();<br><span class="hljs-keyword">if</span> (serialEventRun) serialEventRun();<br>&#125;<br>        <br><span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure><p>所以这里就是一个死循环</p><p><a href="https://blog.csdn.net/Neutionwei/article/details/109588413">https://blog.csdn.net/Neutionwei/article/details/109588413</a></p><p>在这篇博文中找到了答案</p>]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>problems</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>博客更新日志</title>
+    <link href="/2021/04/10/%E5%8D%9A%E5%AE%A2%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97/"/>
+    <url>/2021/04/10/%E5%8D%9A%E5%AE%A2%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97/</url>
+    
+    <content type="html"><![CDATA[<h1 id="博客可能相关内容"><a href="#博客可能相关内容" class="headerlink" title="博客可能相关内容"></a>博客可能相关内容</h1><p>1.学习过程中解决的一些问题</p><p>2.生活记录向</p><p>3.乱七八糟的想法</p><h1 id="更新记录如下"><a href="#更新记录如下" class="headerlink" title="更新记录如下"></a>更新记录如下</h1><h2 id="2021-04-12"><a href="#2021-04-12" class="headerlink" title="2021/04/12"></a>2021/04/12</h2><h3 id="修改主页标题并增加了个性签名"><a href="#修改主页标题并增加了个性签名" class="headerlink" title="修改主页标题并增加了个性签名"></a>修改主页标题并增加了个性签名</h3><p>全局配置文件中的_config.yml的site部分</p><h3 id="配置sitemap"><a href="#配置sitemap" class="headerlink" title="配置sitemap"></a>配置sitemap</h3><p>下载了<br>npm install hexo-generator-sitemap –save</p><p>修改了全局配置文件_config.yml中</p><p>增加了</p><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs javascript">sitemap:<br>    path: sitemap.xml<br></code></pre></td></tr></table></figure><h3 id="增加不蒜子统计"><a href="#增加不蒜子统计" class="headerlink" title="增加不蒜子统计"></a>增加不蒜子统计</h3><p>详见<a href="https://blog.csdn.net/weixin_43935907/article/details/89332997">https://blog.csdn.net/weixin_43935907/article/details/89332997</a></p><p>yilia出问题了，重装了一遍</p><h3 id="增加版权信息"><a href="#增加版权信息" class="headerlink" title="增加版权信息"></a>增加版权信息</h3><p>详见<a href="https://blog.zscself.com/posts/ee4d9ecb/">https://blog.zscself.com/posts/ee4d9ecb/</a></p><a id="more"></a><h2 id="2021-04-11"><a href="#2021-04-11" class="headerlink" title="2021/04/11"></a>2021/04/11</h2><h3 id="增加了文章”Arduino中LOOP如何实现循环执行“"><a href="#增加了文章”Arduino中LOOP如何实现循环执行“" class="headerlink" title="增加了文章”Arduino中LOOP如何实现循环执行“"></a>增加了文章”Arduino中LOOP如何实现循环执行“</h3><h3 id="增加了文章阅读次数显示"><a href="#增加了文章阅读次数显示" class="headerlink" title="增加了文章阅读次数显示"></a>增加了文章阅读次数显示</h3><p>修改了BLOG\themes\yilia\layout\_partial下article.ejs文件中内容</p><p>在</p><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs javascript">&lt;%# 注释掉-partial(&#x27;post/title&#x27;, &#123;class_name: &#x27;article-title&#x27;&#125;) %&gt;<br></code></pre></td></tr></table></figure><p>后增加了</p><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs javascript">&lt;!--显示阅读次数--&gt;<br>        &lt;% <span class="hljs-keyword">if</span> (!index &amp;&amp; post.comments)&#123; %&gt;<br>          &lt;br/&gt;<br>          &lt;a <span class="hljs-class"><span class="hljs-keyword">class</span></span>=<span class="hljs-string">&quot;cloud-tie-join-count&quot;</span> href=<span class="hljs-string">&quot;javascript:void(0);&quot;</span>   style=<span class="hljs-string">&quot;color:gray;font-size:14px;&quot;</span>&gt;<br>          &lt;span <span class="hljs-class"><span class="hljs-keyword">class</span></span>=<span class="hljs-string">&quot;icon-sort&quot;</span>&gt;&lt;/span&gt;<br>          &lt;span id=<span class="hljs-string">&quot;busuanzi_container_page_pv&quot;</span> style=<span class="hljs-string">&quot;color:#ef7522;font-size:14px;&quot;</span>&gt;<br>          阅读数: <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;busuanzi_value_page_pv&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span></span>次 &amp;nbsp;&amp;nbsp;<br>          &lt;/span&gt;<br>          &lt;/a&gt;<br>&lt;% &#125; %&gt;<br>&lt;!--显示阅读次数完毕--&gt;<br></code></pre></td></tr></table></figure><h2 id="2021-04-10"><a href="#2021-04-10" class="headerlink" title="2021/04/10"></a>2021/04/10</h2><h3 id="增加了文章“博客更新日志”"><a href="#增加了文章“博客更新日志”" class="headerlink" title="增加了文章“博客更新日志”"></a>增加了文章“博客更新日志”</h3><h3 id="增加了文章“关于西西弗斯的思考”"><a href="#增加了文章“关于西西弗斯的思考”" class="headerlink" title="增加了文章“关于西西弗斯的思考”"></a>增加了文章“关于西西弗斯的思考”</h3><h3 id="增加了置顶功能"><a href="#增加了置顶功能" class="headerlink" title="增加了置顶功能"></a>增加了置顶功能</h3><p>修改了BLOG\node_modules\hexo-generator-index\lib\generator.js中的内容</p><p>原为</p><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs javascript"><span class="hljs-meta">&#x27;use strict&#x27;</span>;<br><br><span class="hljs-keyword">const</span> pagination = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;hexo-pagination&#x27;</span>);<br><span class="hljs-keyword">const</span> &#123; sort &#125; = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;timsort&#x27;</span>);<br><br><span class="hljs-built_in">module</span>.exports = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">locals</span>) </span>&#123;<br>  <span class="hljs-keyword">const</span> config = <span class="hljs-built_in">this</span>.config;<br>  <span class="hljs-keyword">const</span> posts = locals.posts.sort(config.index_generator.order_by);<br><br>  sort(posts.data, <span class="hljs-function">(<span class="hljs-params">a, b</span>) =&gt;</span> (b.sticky || <span class="hljs-number">0</span>) - (a.sticky || <span class="hljs-number">0</span>));<br><br>  <span class="hljs-keyword">const</span> paginationDir = config.pagination_dir || <span class="hljs-string">&#x27;page&#x27;</span>;<br>  <span class="hljs-keyword">const</span> path = config.index_generator.path || <span class="hljs-string">&#x27;&#x27;</span>;<br><br>  <span class="hljs-keyword">return</span> pagination(path, posts, &#123;<br>    perPage: config.index_generator.per_page,<br>    layout: [<span class="hljs-string">&#x27;index&#x27;</span>, <span class="hljs-string">&#x27;archive&#x27;</span>],<br>    format: paginationDir + <span class="hljs-string">&#x27;/%d/&#x27;</span>,<br>    data: &#123;<br>      __index: <span class="hljs-literal">true</span><br>    &#125;<br>  &#125;);<br>&#125;;<br><br><br><br></code></pre></td></tr></table></figure><p>修改后为</p><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs javascript"><span class="hljs-meta">&#x27;use strict&#x27;</span>;<br><br><span class="hljs-keyword">var</span> pagination = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;hexo-pagination&#x27;</span>);<br><br><span class="hljs-built_in">module</span>.exports = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">locals</span>) </span>&#123;<br>  <span class="hljs-keyword">var</span> config = <span class="hljs-built_in">this</span>.config;<br>  <span class="hljs-keyword">var</span> posts = locals.posts.sort(config.index_generator.order_by);<br><br>  posts.data = posts.data.sort(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">a, b</span>) </span>&#123;<br>      <span class="hljs-keyword">if</span>(a.top &amp;&amp; b.top) &#123;<br>          <span class="hljs-keyword">if</span>(a.top == b.top) <span class="hljs-keyword">return</span> b.date - a.date;<br>          <span class="hljs-keyword">else</span> <span class="hljs-keyword">return</span> b.top - a.top;<br>      &#125;<br>      <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span>(a.top &amp;&amp; !b.top) &#123;<br>          <span class="hljs-keyword">return</span> -<span class="hljs-number">1</span>;<br>      &#125;<br>      <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span>(!a.top &amp;&amp; b.top) &#123;<br>          <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;<br>      &#125;<br>      <span class="hljs-keyword">else</span> <span class="hljs-keyword">return</span> b.date - a.date;<br>  &#125;);<br><br>  <span class="hljs-keyword">var</span> paginationDir = config.pagination_dir || <span class="hljs-string">&#x27;page&#x27;</span>;<br><br>  <span class="hljs-keyword">return</span> pagination(<span class="hljs-string">&#x27;&#x27;</span>, posts, &#123;<br>    perPage: config.index_generator.per_page,<br>    layout: [<span class="hljs-string">&#x27;index&#x27;</span>, <span class="hljs-string">&#x27;archive&#x27;</span>],<br>    format: paginationDir + <span class="hljs-string">&#x27;/%d/&#x27;</span>,<br>    data: &#123;<br>      __index: <span class="hljs-literal">true</span><br>    &#125;<br>  &#125;);<br>&#125;;<br></code></pre></td></tr></table></figure><h3 id="将博客更新日志置顶"><a href="#将博客更新日志置顶" class="headerlink" title="将博客更新日志置顶"></a>将博客更新日志置顶</h3><h3 id="将关于爱情置顶"><a href="#将关于爱情置顶" class="headerlink" title="将关于爱情置顶"></a>将关于爱情置顶</h3><h2 id="2021-04-05"><a href="#2021-04-05" class="headerlink" title="2021/04/05"></a>2021/04/05</h2><h3 id="增加了文章“清明随想”"><a href="#增加了文章“清明随想”" class="headerlink" title="增加了文章“清明随想”"></a>增加了文章“清明随想”</h3>]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>博客</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>关于西西弗斯的思考</title>
+    <link href="/2021/04/10/%E5%85%B3%E4%BA%8E%E8%A5%BF%E8%A5%BF%E5%BC%97%E6%96%AF%E7%9A%84%E6%80%9D%E8%80%83/"/>
+    <url>/2021/04/10/%E5%85%B3%E4%BA%8E%E8%A5%BF%E8%A5%BF%E5%BC%97%E6%96%AF%E7%9A%84%E6%80%9D%E8%80%83/</url>
+    
+    <content type="html"><![CDATA[<h1 id="关于西西弗斯的思考"><a href="#关于西西弗斯的思考" class="headerlink" title="关于西西弗斯的思考"></a>关于西西弗斯的思考</h1><p>“人一定要想象西西弗斯的快乐，因为向着高处挣扎本身足以填满一个人的心灵。”–加缪</p><p>​        西西弗斯触犯众神，受到诸神惩罚，惩罚的方式很简单，永无止尽地将一块巨石推向山顶，众神希望用无效无望的劳动惩罚西西弗斯。</p><p>​        加缪这样评价西西弗斯：“西西弗斯无声的全部快乐就在于：他的命运是属于他的。他的岩石是他的事情。同样，当荒谬的人深思他的痛苦时，他就使一切偶像哑然失声。荒谬的人知道，他是自己生活的主人。我把西西弗斯留在山脚下！我们总是看到他身上的重负。而西西弗斯告诉我们，最高的虔诚是否认诸神并且搬掉石头。他也认为自己是幸福的。这个从此没有主宰的世界对他来讲既不是荒漠，也不是沃土。这块巨石上的每一颗粒，这黑黝黝的高山上的每一矿砂唯有对西西弗斯才形成一个世界。他爬上山顶所要进行的斗争本身就足以使一个人心里感到充实”</p><a id="more"></a><p>​        以前我一直不理解西西弗斯，从我的视角来看，将无穷无尽的推石头上山看作自己的全部，只有脑子出了问题才会如此。我翻来覆去思考他行为的合理性，两年之后，我突然想通了其中的一些关键。举个例子，有的人认为跑步十分痛苦，长跑便是对他最大的惩罚；有的人不喜欢吃虾，让这样的人整日吃虾便是对他最大的惩罚；有的人觉得三餐无肉就是极致的辛苦，需要过人的意志力才能坚持这样的生活。</p><p>​        这就引出我在这篇文章中想谈论的主题：物质是客观的，苦难是主观的。那么相对的，快乐与否，幸福与否，是不是都可以由主观判断决定。</p><p>​        所以我说我对西西弗斯的理解依然比较浅薄，我能够理解西西弗斯改变后的状态，却不能认可他主动发生这样的转变。前些年读史铁生的文章较多，我觉得他在经历重大打击后发生的转变也有点西西弗斯的意思，但又不尽相同。史铁生是对苦难的释怀，也就是说这依然是苦难，而在我看来，对西西弗斯而言，没有什么是苦难，他可以接受一切，一切都可以成为他生命的全部，这样想来，西西弗斯是不是个M呢（doge）。</p><p>​        从西西弗斯的荒谬中，我能得到什么吗？</p>]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>随笔</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>关于人与人以及人与机器关系的思考</title>
+    <link href="/2021/04/09/%E5%85%B3%E4%BA%8E%E4%BA%BA%E4%B8%8E%E4%BA%BA%E4%BB%A5%E5%8F%8A%E4%BA%BA%E4%B8%8E%E6%9C%BA%E5%99%A8%E5%85%B3%E7%B3%BB%E7%9A%84%E6%80%9D%E8%80%83/"/>
+    <url>/2021/04/09/%E5%85%B3%E4%BA%8E%E4%BA%BA%E4%B8%8E%E4%BA%BA%E4%BB%A5%E5%8F%8A%E4%BA%BA%E4%B8%8E%E6%9C%BA%E5%99%A8%E5%85%B3%E7%B3%BB%E7%9A%84%E6%80%9D%E8%80%83/</url>
+    
+    <content type="html"><![CDATA[<h1 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h1><p>​        在我的生日之前半个月，我将常用的社交软件上的生日全部向后修改了10天。一开始我只是不希望收到来自这些软件的生日提醒，包括其他人通过这些软件提供的系统发送的“生日礼物。</p><p>​        生日当天，我果然没有再收到来自任何人的祝福（除了我的父母）。起初我只是反感虚假的祝福，但是讽刺的是，似乎除了机器，没有人会记起我。当我不处于交往过程中时，终究是一个“别人”，人或许就是自私的，考虑别人本来就不符合人的本性。</p><h1 id="人究竟应该如何相处"><a href="#人究竟应该如何相处" class="headerlink" title="人究竟应该如何相处"></a>人究竟应该如何相处</h1><a id="more"></a><p>​        人人引用这样一句话“人是社会性动物”，我不懂，但以我狭隘的见解，是先有“我”，然后有社会。这一方面体现在我对享乐主义的偏爱上，另一方面体现在我对孤独的态度上-为孤独而孤独。</p><p>​        可能在心底里，我认为孤独处于一个较高的层面，是脱离世俗的，自己追求孤独多少有点自我感动的倾向。而我又不习惯孤独。出生在一个没有发小的年代，我对挚友这一概念缺乏认识，我无法理解快速火热的朋友，也无法理解分别后为何不再联系。我会遇见可爱的人，会遇见一同出游的朋友，但是终究难遇知音。没有人能真正理解我，甚至包括我自己都缺乏清晰的自我认知。</p><p>​        与人相处是不是应该首要与自己相处（又有矫揉造作之意）。我甚是厌恶“与自己和解”，倒不是它本身如何那般，而是互联网上的滥用令人反感，因此我说有矫揉造作的嫌疑。</p><h1 id="机器于人有何意义"><a href="#机器于人有何意义" class="headerlink" title="机器于人有何意义"></a>机器于人有何意义</h1>]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>随笔</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>清明随想</title>
+    <link href="/2021/04/05/%E6%B8%85%E6%98%8E%E9%9A%8F%E6%83%B3/"/>
+    <url>/2021/04/05/%E6%B8%85%E6%98%8E%E9%9A%8F%E6%83%B3/</url>
+    
+    <content type="html"><![CDATA[<h1 id="为什么不退出呢"><a href="#为什么不退出呢" class="headerlink" title="为什么不退出呢"></a>为什么不退出呢</h1><p>​        无论如何忙，我都能找到令自己舒适的方式，我永远有机会退出，我永远能够自己选择退出，这是我继续生活的底气。</p><p>​        我可以逃课，我可以睡觉，我可以离开任何地方，我可以去一切想去的地方，我可以逃避。<a id="more"></a></p><p>​        很多人觉得放弃是需要勇气的，可是退出怎么会要勇气呢，只要下定决心，总能退出的，人总有一条后路，这样就不会害怕了。</p><p>​        当别人问我，如果我不喜欢现在的大学生活，我可以怎么办，我是真的认为go back to high school未尝不是一个不错的选择。可是我被嘲笑了，没有人觉得我是真心的，所有人都认为我只是在开玩笑，我不再说话，我不指望他们能理解“退出”在一个人生命中所能发挥的巨大作用。</p><h1 id="能跟我去散步吗"><a href="#能跟我去散步吗" class="headerlink" title="能跟我去散步吗"></a>能跟我去散步吗</h1><p>​        当一群青年人相约出游，他们永远在追寻感官刺激，餐馆，酒吧，夜店，人群，音乐，游玩成为游玩的目的，人在其中不再拥有地位。一切出游的计划都是满满当当，你要准时，你要去景点打卡，你要合群。</p><p>​        我怀念随机的惊喜，我希望为少见的鸟儿驻足，我向往在寂静而昏暗的街道上散步，我想念那群人。下次再见，可以陪我散散步吗</p>]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>随笔</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>刀耕火种何时才能真正结束</title>
+    <link href="/2021/02/05/%E5%88%80%E8%80%95%E7%81%AB%E7%A7%8D%E4%BD%95%E6%97%B6%E6%89%8D%E8%83%BD%E7%9C%9F%E6%AD%A3%E7%BB%93%E6%9D%9F/"/>
+    <url>/2021/02/05/%E5%88%80%E8%80%95%E7%81%AB%E7%A7%8D%E4%BD%95%E6%97%B6%E6%89%8D%E8%83%BD%E7%9C%9F%E6%AD%A3%E7%BB%93%E6%9D%9F/</url>
+    
+    <content type="html"><![CDATA[<h1 id="刀耕火种何时才能真正结束"><a href="#刀耕火种何时才能真正结束" class="headerlink" title="刀耕火种何时才能真正结束"></a>刀耕火种何时才能真正结束</h1><p>​    几千年前，人类就开始了刀耕火种的农耕实践，更高的粮食产量支撑起了更多的人口，带来了更强的生产力。然而到了现在，除了大规模机械化的农事生产，较小的农业实践依然广泛的存在于这片大陆上，虽然并不作为家庭的经济支柱存在，但是这些农业活动依然存在于乡村，城郊，以50后60后为主要代表，坚持使用刀耕火种的种植方式。而规模稍大的农事实践，即使使用机器进行播种收割等活动，收割结束之后，残余的秸秆依然是就地焚烧，这样的方式便利但污染环境，的确提高肥力但依然不符合当今进步的科技。<a id="more"></a></p>]]></content>
+    
+    
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>关于爱情</title>
+    <link href="/2021/02/03/%E5%85%B3%E4%BA%8E%E7%88%B1%E6%83%85/"/>
+    <url>/2021/02/03/%E5%85%B3%E4%BA%8E%E7%88%B1%E6%83%85/</url>
+    
+    <content type="html"><![CDATA[]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>随笔</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>跑步随想</title>
+    <link href="/2021/02/03/%E8%B7%91%E6%AD%A5%E9%9A%8F%E6%83%B3/"/>
+    <url>/2021/02/03/%E8%B7%91%E6%AD%A5%E9%9A%8F%E6%83%B3/</url>
+    
+    <content type="html"><![CDATA[<h1 id="缘起"><a href="#缘起" class="headerlink" title="缘起"></a>缘起</h1><p>两年前为了减肥我开始每天有规律的跑步，一周两三天，一天两三次，一周下来一共十几公里，再加上节食的成果，不到两个月，体重掉了二十千克。瘦下来之后，跑步对我就不再很重要，我从来没有喜欢上跑步，我一直认为长跑是意志力的体现，这件事情成立的前提是坚持跑步是困难的，需要高度的自律。所以我认为自己从来没有爱上过跑步，甚至说来这是对自己的折磨，尤其是膝盖损伤很大。<a id="more"></a></p><h1 id="如今"><a href="#如今" class="headerlink" title="如今"></a>如今</h1><h1 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h1><p>焚烧秸秆</p><p>我追着烟，烟追着风，我走了一公里，烟走了一百米。我跑过了西边的村子，跑过了东边的村子，一路上我闻到猪大粪的味道，工厂油漆的味道，焚烧秸秆呛人的烟味道。热闹的广场舞。来到马路上，我又接着闻到汽油的燃烧，除夕将至，我却无端的想起“夏夜晚风”，是天气太热的缘故吗，还是说我就爱这江南温和的冬。</p>]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>随笔</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  
+</search>
